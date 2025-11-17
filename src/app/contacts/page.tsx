@@ -202,7 +202,7 @@ export default function ContactsPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-xl font-semibold">
-                        {contact.firstName || ""} {contact.lastName || ""}
+                        {contact.firstName ?? ""} {contact.lastName ?? ""}
                         {!contact.firstName && !contact.lastName && (
                           <span className="text-gray-400">(No name)</span>
                         )}
@@ -239,7 +239,8 @@ export default function ContactsPage() {
                           </p>
                         )}
                         <p className="text-xs text-gray-400">
-                          Created: {new Date(contact.createdAt).toLocaleString()}
+                          Created:{" "}
+                          {new Date(contact.createdAt).toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -267,4 +268,3 @@ export default function ContactsPage() {
     </div>
   );
 }
-
