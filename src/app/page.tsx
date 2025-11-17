@@ -1,8 +1,6 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-
-import { LatestPost } from "~/app/_components/post";
 import { SignInButton } from "~/app/_components/sign-in-button";
 import { auth } from "~/server/better-auth";
 import { getSession } from "~/server/better-auth/server";
