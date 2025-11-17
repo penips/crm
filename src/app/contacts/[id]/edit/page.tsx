@@ -11,7 +11,11 @@ export default function EditContactPage() {
   const contactId = params?.id as string;
   const utils = api.useUtils();
 
-  const { data: contact, isLoading, error } = api.contact.getById.useQuery({
+  const {
+    data: contact,
+    isLoading,
+    error,
+  } = api.contact.getById.useQuery({
     id: contactId,
   });
 
@@ -28,8 +32,8 @@ export default function EditContactPage() {
     data: Parameters<typeof updateContact.mutate>[0],
   ) => {
     updateContact.mutate({
-      id: contactId,
       ...data,
+      id: contactId,
     });
   };
 
@@ -51,8 +55,8 @@ export default function EditContactPage() {
             Contact Not Found
           </h2>
           <p className="text-red-600">
-            The contact you're trying to edit doesn't exist or you don't have
-            permission to edit it.
+            The contact you&apos;re trying to edit doesn&apos;t exist or you
+            don&apos;t have permission to edit it.
           </p>
           <Link
             href="/contacts"
@@ -85,7 +89,7 @@ export default function EditContactPage() {
       <div className="rounded-lg border border-gray-300 bg-white p-6 shadow">
         <ContactForm
           initialData={contact}
-          onSubmit={handleUpdate}
+          onSubmit={(data) => handleUpdate({ id: contactId, ...data })}
           onCancel={() => router.push(`/contacts/${contactId}`)}
           isLoading={updateContact.isPending}
           mode="edit"
@@ -95,4 +99,3 @@ export default function EditContactPage() {
     </div>
   );
 }
-

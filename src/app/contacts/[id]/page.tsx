@@ -47,7 +47,7 @@ export default function ContactDetailPage() {
             Contact Not Found
           </h2>
           <p className="text-red-600">
-            The contact you're looking for doesn't exist or you don't have
+            The contact you&apos;re looking for doesn&apos;t exist or you don&apos;t have
             permission to view it.
           </p>
           <Link
@@ -218,7 +218,9 @@ export default function ContactDetailPage() {
             <div>
               <dt className="text-sm font-medium text-gray-500">Last Updated</dt>
               <dd className="mt-1 text-sm text-gray-900">
-                {new Date(contact.updatedAt).toLocaleString()}
+                {contact.updatedAt
+                  ? new Date(contact.updatedAt).toLocaleString()
+                  : <span className="text-gray-400">Not available</span>}
               </dd>
             </div>
           </dl>
