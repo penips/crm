@@ -9,10 +9,20 @@ export function SignInButton() {
   const handleSignIn = async () => {
     setIsLoading(true);
     try {
-      await authClient.signIn.social({
+      // Use relative path - better-auth will construct full URL from baseURL
+      const res = await authClient.signIn.social({
         provider: "github",
-        callbackURL: window.location.origin + "/",
+        callbackURL: "/",
       });
+
+      // Handle redirect if URL is provided
+      if (res && typeof res === "object" && "url" in res) {
+        const url = res.url as string | undefined;
+        if (url) {
+          window.location.href = url;
+          return; // Don't set loading to false, we're redirecting
+        }
+      }
     } catch (error) {
       console.error("Sign in error:", error);
     } finally {
