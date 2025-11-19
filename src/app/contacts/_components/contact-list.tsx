@@ -1,0 +1,199 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { api } from "~/trpc/react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+
+interface ContactListProps {
+  onContactClick?: (contactId: string) => void;
+  showActions?: boolean;
+  limit?: number;
+}
+
+export function ContactList({
+  onContactClick,
+  showActions = true,
+  limit,
+}: ContactListProps) {
+  const [search, setSearch] = useState("");
+
+  const { data, isLoading, refetch } = api.contact.getAll.useQuery({
+    search: search || undefined,
+    limit: limit,
+  });
+
+  const deleteContact = api.contact.delete.useMutation({
+    onSuccess: () => {
+      void refetch();
+    },
+  });
+
+  const handleRowClick = (contactId: string) => {
+    if (onContactClick) {
+      onContactClick(contactId);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Search Bar */}
+      <div>
+        <Input
+          type="text"
+          placeholder="Search contacts by name, email, or company..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full"
+        />
+      </div>
+
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Loading contacts...</p>
+        </div>
+      ) : (
+        <div className="rounded-lg border">
+          <div className="overflow-x-auto">
+            {data?.contacts.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">
+                <p>No contacts found.</p>
+                {search && (
+                  <p className="mt-2 text-sm">
+                    Try adjusting your search terms.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <>
+                {/* Results Header */}
+                <div className="border-b bg-muted/50 px-6 py-3">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {data?.contacts.length ?? 0} of {data?.total ?? 0}{" "}
+                    contact(s)
+                    {search && ` matching "${search}"`}
+                  </p>
+                </div>
+
+                {/* Table */}
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Job Title</TableHead>
+                      <TableHead>Tags</TableHead>
+                      {showActions && <TableHead className="text-right">Actions</TableHead>}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data?.contacts.map((contact) => (
+                      <TableRow
+                        key={contact.id}
+                        className={onContactClick ? "cursor-pointer" : ""}
+                        onClick={() => handleRowClick(contact.id)}
+                      >
+                        <TableCell className="font-medium">
+                          {contact.firstName || contact.lastName ? (
+                            `${contact.firstName ?? ""} ${contact.lastName ?? ""}`.trim()
+                          ) : (
+                            <span className="text-muted-foreground italic">
+                              (No name)
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {contact.email ?? (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {contact.phone ?? (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {contact.company ?? (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {contact.jobTitle ?? (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {contact.tags && contact.tags.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {contact.tags.map((tag, idx) => (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        {showActions && (
+                          <TableCell
+                            className="text-right"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="link"
+                                asChild
+                                className="h-auto p-0"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Link href={`/contacts/${contact.id}`}>
+                                  View
+                                </Link>
+                              </Button>
+                              <Button
+                                variant="link"
+                                className="h-auto p-0 text-destructive hover:text-destructive"
+                                onClick={() => {
+                                  if (
+                                    confirm(
+                                      "Are you sure you want to delete this contact?",
+                                    )
+                                  ) {
+                                    deleteContact.mutate({ id: contact.id });
+                                  }
+                                }}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
