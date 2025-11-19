@@ -2,16 +2,19 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
-import { ContactList, ContactForm } from "./index";
+import { ContactForm } from "../_components/contact-form";
+import { ContactList } from "../_components/contact-list";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function ContactsSection() {
     const [showForm, setShowForm] = useState(false);
+    const utils = api.useUtils();
 
     const createContact = api.contact.create.useMutation({
         onSuccess: () => {
             setShowForm(false);
+            void utils.contact.getAll.invalidate();
         },
     });
 
