@@ -118,8 +118,8 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
                     <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                         {/* Name */}
                         <div>
-                            <dt className="text-sm font-medium text-gray-500">Full Name</dt>
-                            <dd className="mt-1 text-sm text-gray-900">
+                            <dt className="text-sm font-medium text-muted-foreground">Full Name</dt>
+                            <dd className="mt-1 text-sm text-foreground">
                                 {contact.firstName || contact.lastName
                                     ? `${contact.firstName ?? ""} ${contact.lastName ?? ""}`.trim()
                                     : (
@@ -130,8 +130,8 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 
                         {/* Email */}
                         <div>
-                            <dt className="text-sm font-medium text-gray-500">Email</dt>
-                            <dd className="mt-1 text-sm text-gray-900">
+                            <dt className="text-sm font-medium text-muted-foreground">Email</dt>
+                            <dd className="mt-1 text-sm text-foreground">
                                 {contact.email ? (
                                     <a
                                         href={`mailto:${contact.email}`}
@@ -147,8 +147,8 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 
                         {/* Phone */}
                         <div>
-                            <dt className="text-sm font-medium text-gray-500">Phone</dt>
-                            <dd className="mt-1 text-sm text-gray-900">
+                            <dt className="text-sm font-medium text-muted-foreground">Phone</dt>
+                            <dd className="mt-1 text-sm text-foreground">
                                 {contact.phone ? (
                                     <a
                                         href={`tel:${contact.phone}`}
@@ -164,8 +164,8 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 
                         {/* Company */}
                         <div>
-                            <dt className="text-sm font-medium text-gray-500">Company</dt>
-                            <dd className="mt-1 text-sm text-gray-900">
+                            <dt className="text-sm font-medium text-muted-foreground">Company</dt>
+                            <dd className="mt-1 text-sm text-foreground">
                                 {contact.company ?? (
                                     <span className="text-muted-foreground">Not provided</span>
                                 )}
@@ -174,8 +174,8 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 
                         {/* Job Title */}
                         <div>
-                            <dt className="text-sm font-medium text-gray-500">Job Title</dt>
-                            <dd className="mt-1 text-sm text-gray-900">
+                            <dt className="text-sm font-medium text-muted-foreground">Job Title</dt>
+                            <dd className="mt-1 text-sm text-foreground">
                                 {contact.jobTitle ?? (
                                     <span className="text-muted-foreground">Not provided</span>
                                 )}
@@ -184,7 +184,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 
                         {/* Tags */}
                         <div>
-                            <dt className="text-sm font-medium text-gray-500">Tags</dt>
+                            <dt className="text-sm font-medium text-muted-foreground">Tags</dt>
                             <dd className="mt-1">
                                 {contact.tags && contact.tags.length > 0 ? (
                                     <div className="flex flex-wrap gap-2">
@@ -202,10 +202,10 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 
                         {/* Notes */}
                         <div className="sm:col-span-2">
-                            <dt className="text-sm font-medium text-gray-500">Notes</dt>
-                            <dd className="mt-1 text-sm text-gray-900">
+                            <dt className="text-sm font-medium text-muted-foreground">Notes</dt>
+                            <dd className="mt-1 text-sm text-foreground">
                                 {contact.notes ? (
-                                    <div className="whitespace-pre-wrap rounded-md bg-muted p-3">
+                                    <div className="whitespace-pre-wrap rounded-md bg-muted p-3 text-foreground">
                                         {contact.notes}
                                     </div>
                                 ) : (
@@ -216,16 +216,16 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 
                         {/* Created Date */}
                         <div>
-                            <dt className="text-sm font-medium text-gray-500">Created</dt>
-                            <dd className="mt-1 text-sm text-gray-900">
+                            <dt className="text-sm font-medium text-muted-foreground">Created</dt>
+                            <dd className="mt-1 text-sm text-foreground">
                                 {new Date(contact.createdAt).toLocaleString()}
                             </dd>
                         </div>
 
                         {/* Updated Date */}
                         <div>
-                            <dt className="text-sm font-medium text-gray-500">Last Updated</dt>
-                            <dd className="mt-1 text-sm text-gray-900">
+                            <dt className="text-sm font-medium text-muted-foreground">Last Updated</dt>
+                            <dd className="mt-1 text-sm text-foreground">
                                 {contact.updatedAt
                                     ? new Date(contact.updatedAt).toLocaleString()
                                     : <span className="text-muted-foreground">Not available</span>}
