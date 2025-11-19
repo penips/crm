@@ -5,6 +5,17 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { contacts } from "~/server/db/schema";
 import { randomUUID } from "crypto";
 
+const buildSearchCondition = (search: string | undefined) => {
+  if (!search) return null;
+  const searchTerm = `%${search}%`;
+  return or(
+    ilike(contacts.firstName, searchTerm),
+    ilike(contacts.lastName, searchTerm),
+    ilike(contacts.email, searchTerm),
+    ilike(contacts.company, searchTerm),
+  )!;
+};
+
 export const contactRouter = createTRPCRouter({
   getAll: protectedProcedure
     .input(
@@ -17,43 +28,42 @@ export const contactRouter = createTRPCRouter({
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const results = await ctx.db.query.contacts.findMany({
-        where: (contacts, { eq, and, or, ilike }) => {
-          const conditions = [eq(contacts.createdById, ctx.session.user.id)];
-          if (input?.search) {
-            const searchTerm = `%${input.search}%`;
-            const searchCondition = or(
-              ilike(contacts.firstName, searchTerm),
-              ilike(contacts.lastName, searchTerm),
-              ilike(contacts.email, searchTerm),
-              ilike(contacts.company, searchTerm),
-            )!;
-            conditions.push(searchCondition);
-          }
-          return and(...conditions);
-        },
-        orderBy: [desc(contacts.createdAt)],
-        limit: input?.limit ?? 50,
-        offset: input?.offset ?? 0,
-      });
+      const userId = ctx.session.user.id;
+      const searchCondition = buildSearchCondition(input?.search);
 
-      // Optimized count query
-      const whereConditions = [eq(contacts.createdById, ctx.session.user.id)];
-      if (input?.search) {
-        const searchTerm = `%${input.search}%`;
-        const searchCondition = or(
-          ilike(contacts.firstName, searchTerm),
-          ilike(contacts.lastName, searchTerm),
-          ilike(contacts.email, searchTerm),
-          ilike(contacts.company, searchTerm),
-        )!;
+      const whereConditions = [eq(contacts.createdById, userId)];
+      if (searchCondition) {
         whereConditions.push(searchCondition);
       }
+      const rawWhereCondition = and(...whereConditions);
 
-      const [totalResult] = await ctx.db
-        .select({ count: count() })
-        .from(contacts)
-        .where(and(...whereConditions));
+      const [results, totalResult] = await Promise.all([
+        ctx.db.query.contacts.findMany({
+          where: (contacts, { eq, and, or, ilike }) => {
+            const conditions = [eq(contacts.createdById, userId)];
+            if (input?.search) {
+              const searchTerm = `%${input.search}%`;
+                  const searchCondition = or(
+                ilike(contacts.firstName, searchTerm),
+                ilike(contacts.lastName, searchTerm),
+                ilike(contacts.email, searchTerm),
+                ilike(contacts.company, searchTerm),
+              )!;
+              conditions.push(searchCondition);
+            }
+            return and(...conditions);
+          },
+          orderBy: [desc(contacts.createdAt)],
+          limit: input?.limit ?? 50,
+          offset: input?.offset ?? 0,
+        }),
+        ctx.db
+          .select({ count: count() })
+          .from(contacts)
+          .where(rawWhereCondition)
+          .then((result) => result[0]),
+      ]);
+
       const total = totalResult?.count ?? 0;
 
       return {
@@ -83,8 +93,8 @@ export const contactRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       z.object({
-        firstName: z.string().min(1).optional(),
-        lastName: z.string().min(1).optional(),
+        firstName: z.string().min(1).optional().or(z.literal("")),
+        lastName: z.string().min(1).optional().or(z.literal("")),
         email: z.string().email().optional().or(z.literal("")),
         phone: z.string().optional(),
         company: z.string().optional(),
@@ -234,7 +244,7 @@ export const contactRouter = createTRPCRouter({
           eq(contacts.createdById, ctx.session.user.id),
           isNotNull(contacts.company),
         ),
-      });
+    });
 
     const companiesCount = new Set(
       contactsWithCompanies
