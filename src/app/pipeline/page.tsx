@@ -49,7 +49,7 @@ export default function PipelinePage() {
                 </div>
                 <Button onClick={() => setShowForm(true)}>
                     <Plus className="mr-2 h-4 w-4" />
-                    New Deal
+                    Add Deal
                 </Button>
             </div>
 
