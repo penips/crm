@@ -1,15 +1,8 @@
 import { z } from "zod";
-import {
-  eq,
-  desc,
-  and,
-  count,
-  ilike,
-  sql,
-} from "drizzle-orm";
+import { eq, desc, and, or, count, ilike, sql, exists } from "drizzle-orm";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { deals, dealContacts } from "~/server/db/schema";
+import { deals, dealContacts, contacts } from "~/server/db/schema";
 import { randomUUID } from "crypto";
 
 const DEAL_STAGES = [
@@ -55,7 +48,30 @@ export const dealRouter = createTRPCRouter({
 
       if (input?.search) {
         const searchTerm = `%${input.search}%`;
-        whereConditions.push(ilike(deals.name, searchTerm));
+        // Search by deal name, stage, or associated contact names
+        whereConditions.push(
+          or(
+            ilike(deals.name, searchTerm),
+            ilike(deals.stage, searchTerm),
+            exists(
+              ctx.db
+                .select()
+                .from(dealContacts)
+                .innerJoin(contacts, eq(dealContacts.contactId, contacts.id))
+                .where(
+                  and(
+                    eq(dealContacts.dealId, deals.id),
+                    or(
+                      ilike(contacts.firstName, searchTerm),
+                      ilike(contacts.lastName, searchTerm),
+                      ilike(contacts.email, searchTerm),
+                      ilike(contacts.company, searchTerm),
+                    ),
+                  ),
+                ),
+            ),
+          )!,
+        );
       }
 
       // Add column filter conditions
@@ -209,14 +225,33 @@ export const dealRouter = createTRPCRouter({
       const rawWhereCondition = and(...whereConditions);
 
       const queryOptions: Parameters<typeof ctx.db.query.deals.findMany>[0] = {
-        where: (deals, { eq, and, ilike: ilikeFn, sql: sqlFn }) => {
+        where: (deals, { eq, and, or, ilike: ilikeFn, sql: sqlFn }) => {
           const conditions = [eq(deals.createdById, userId)];
           if (input?.stage) {
             conditions.push(eq(deals.stage, input.stage));
           }
           if (input?.search) {
             const searchTerm = `%${input.search}%`;
-            conditions.push(ilikeFn(deals.name, searchTerm));
+            // Search by deal name, stage, or associated contact names
+            // Use SQL for contact search since query builder doesn't easily support EXISTS with joins
+            conditions.push(
+              or(
+                ilikeFn(deals.name, searchTerm),
+                ilikeFn(deals.stage, searchTerm),
+                sqlFn`EXISTS (
+                  SELECT 1
+                  FROM "pg-drizzle_deal_contact" dc
+                  INNER JOIN "pg-drizzle_contact" c ON dc."contact_id" = c."id"
+                  WHERE dc."deal_id" = ${deals.id}
+                    AND (
+                      c."first_name" ILIKE ${searchTerm}
+                      OR c."last_name" ILIKE ${searchTerm}
+                      OR c."email" ILIKE ${searchTerm}
+                      OR c."company" ILIKE ${searchTerm}
+                    )
+                )`,
+              )!,
+            );
           }
           // Add column filter conditions
           if (input?.columnFilters && input.columnFilters.length > 0) {
