@@ -1,0 +1,1 @@
+ALTER TABLE "pg-drizzle_deal" DROP COLUMN "probability";

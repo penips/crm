@@ -8,5 +8,6 @@ export default {
   dbCredentials: {
     url: env.DATABASE_URL,
   },
-  tablesFilter: ["crm_*"],
+  out: "./drizzle",
+  tablesFilter: ["pg-drizzle_*"],
 } satisfies Config;
