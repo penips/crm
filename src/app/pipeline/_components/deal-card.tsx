@@ -57,7 +57,7 @@ export const DealCard = memo(function DealCard({
         if (isNaN(numValue)) return value;
         return new Intl.NumberFormat("en-US", {
             style: "currency",
-            currency: currency ?? "USD",
+            currency: currency ?? "NZD",
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
         }).format(numValue);

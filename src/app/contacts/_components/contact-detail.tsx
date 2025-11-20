@@ -307,7 +307,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
                                                 </TableCell>
                                                 <TableCell className="text-xs py-2">
                                                     {deal.value
-                                                        ? `${deal.currency ?? "USD"} ${parseFloat(deal.value).toLocaleString()}`
+                                                        ? `${deal.currency ?? "NZD"} ${parseFloat(deal.value).toLocaleString()}`
                                                         : "—"}
                                                 </TableCell>
                                                 <TableCell className="text-xs py-2">

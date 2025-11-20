@@ -126,7 +126,7 @@ export function DealList({
         if (!value) return "—";
         const numValue = parseFloat(value);
         if (isNaN(numValue)) return value;
-        const currencySymbol = currency === "USD" ? "$" : currency ?? "$";
+        const currencySymbol = "$"
         return `${currencySymbol}${numValue.toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,

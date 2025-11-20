@@ -179,7 +179,7 @@ export const dealRouter = createTRPCRouter({
           name: input.name,
           stage: input.stage ?? "lead",
           value: input.value ?? null,
-          currency: input.currency ?? "USD",
+          currency: input.currency ?? "NZD",
           expectedCloseDate: input.expectedCloseDate ?? null,
           notes: input.notes ?? null,
           createdById: ctx.session.user.id,

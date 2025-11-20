@@ -43,7 +43,7 @@ export function DealForm({ onSuccess, onCancel }: DealFormProps) {
     const [name, setName] = useState("");
     const [stage, setStage] = useState<(typeof DEAL_STAGES)[number]>("lead");
     const [value, setValue] = useState("");
-    const [currency, setCurrency] = useState("USD");
+    const [currency, setCurrency] = useState("NZD");
     const [contactId, setContactId] = useState<string>("");
     const [notes, setNotes] = useState("");
 
@@ -58,7 +58,7 @@ export function DealForm({ onSuccess, onCancel }: DealFormProps) {
             setNotes("");
             setContactId("");
             setStage("lead");
-            setCurrency("USD");
+            setCurrency("NZD");
         },
         onError: (error) => {
             console.error("Error creating deal:", error);
@@ -134,6 +134,7 @@ export function DealForm({ onSuccess, onCancel }: DealFormProps) {
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="NZD">NZD</SelectItem>
                             <SelectItem value="USD">USD</SelectItem>
                             <SelectItem value="EUR">EUR</SelectItem>
                             <SelectItem value="GBP">GBP</SelectItem>

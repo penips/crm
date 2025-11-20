@@ -69,7 +69,7 @@ export function DealForm({
         name: initialData?.name ?? "",
         stage: (initialData?.stage as typeof DEAL_STAGES[number]) ?? "lead",
         value: initialData?.value ?? "",
-        currency: initialData?.currency ?? "USD",
+        currency: initialData?.currency ?? "NZD",
         contactIds: initialData?.dealContacts?.map((dc) => dc.contact.id) ?? [],
         expectedCloseDate: initialData?.expectedCloseDate
             ? new Date(initialData.expectedCloseDate).toISOString().split("T")[0]
@@ -89,7 +89,7 @@ export function DealForm({
                 name: initialData.name ?? "",
                 stage: (initialData.stage as typeof DEAL_STAGES[number]) ?? "lead",
                 value: initialData.value ?? "",
-                currency: initialData.currency ?? "USD",
+                currency: initialData.currency ?? "NZD",
                 contactIds: initialData.dealContacts?.map((dc) => dc.contact.id) ?? [],
                 expectedCloseDate: initialData.expectedCloseDate
                     ? new Date(initialData.expectedCloseDate).toISOString().split("T")[0]
@@ -299,7 +299,7 @@ export function DealForm({
                 <div>
                     <Label htmlFor="currency">Currency</Label>
                     <Select
-                        value={formData.currency ?? "USD"}
+                        value={formData.currency ?? "NZD"}
                         onValueChange={(value) => {
                             setFormData({ ...formData, currency: value });
                         }}
@@ -308,6 +308,7 @@ export function DealForm({
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="NZD">NZD ($)</SelectItem>
                             <SelectItem value="USD">USD ($)</SelectItem>
                             <SelectItem value="EUR">EUR (€)</SelectItem>
                             <SelectItem value="GBP">GBP (£)</SelectItem>

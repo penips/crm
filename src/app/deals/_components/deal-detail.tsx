@@ -62,7 +62,7 @@ export function DealDetail({ dealId }: DealDetailProps) {
         if (!value) return "Not provided";
         const numValue = parseFloat(value);
         if (isNaN(numValue)) return value;
-        const currencySymbol = currency === "USD" ? "$" : currency ?? "$";
+        const currencySymbol = "$";
         return `${currencySymbol}${numValue.toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,

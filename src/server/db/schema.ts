@@ -44,10 +44,15 @@ export const deals = createTable(
   (d) => ({
     id: d.text("id").primaryKey(),
     name: d.text("name").notNull(),
-    stage: d.text("stage").$default(() => "lead").notNull(),
+    stage: d
+      .text("stage")
+      .$default(() => "lead")
+      .notNull(),
     value: d.text("value"), // Store as text to handle currency formatting, or could be numeric
-    currency: d.text("currency").$default(() => "USD"),
-    expectedCloseDate: d.timestamp("expected_close_date", { withTimezone: true }),
+    currency: d.text("currency").$default(() => "NZD"),
+    expectedCloseDate: d.timestamp("expected_close_date", {
+      withTimezone: true,
+    }),
     notes: d.text("notes"),
     createdById: d
       .text("created_by_id")
