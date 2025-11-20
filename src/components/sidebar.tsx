@@ -40,7 +40,8 @@ const collapsibleNav = {
             icon: <User size={20} />,
             items: [
                 { title: 'Contacts', url: '/contacts' },
-                { title: 'Companies', url: '/companies' },
+                { title: 'Deals', url: '/deals' },
+                { title: 'Pipelines', url: '/pipeline' },
             ],
         }
     ],

@@ -39,6 +39,56 @@ export const contacts = createTable(
   ],
 );
 
+export const deals = createTable(
+  "deal",
+  (d) => ({
+    id: d.text("id").primaryKey(),
+    name: d.text("name").notNull(),
+    stage: d.text("stage").$default(() => "lead").notNull(),
+    value: d.text("value"), // Store as text to handle currency formatting, or could be numeric
+    currency: d.text("currency").$default(() => "USD"),
+    expectedCloseDate: d.timestamp("expected_close_date", { withTimezone: true }),
+    notes: d.text("notes"),
+    createdById: d
+      .text("created_by_id")
+      .notNull()
+      .references(() => user.id),
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+  }),
+  (t) => [
+    index("deal_created_by_idx").on(t.createdById),
+    index("deal_stage_idx").on(t.stage),
+  ],
+);
+
+// Junction table for many-to-many relationship between deals and contacts
+export const dealContacts = createTable(
+  "deal_contact",
+  (d) => ({
+    id: d.text("id").primaryKey(),
+    dealId: d
+      .text("deal_id")
+      .notNull()
+      .references(() => deals.id, { onDelete: "cascade" }),
+    contactId: d
+      .text("contact_id")
+      .notNull()
+      .references(() => contacts.id, { onDelete: "cascade" }),
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (t) => [
+    index("deal_contact_deal_idx").on(t.dealId),
+    index("deal_contact_contact_idx").on(t.contactId),
+  ],
+);
+
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -103,6 +153,7 @@ export const userRelations = relations(user, ({ many }) => ({
   account: many(account),
   session: many(session),
   contacts: many(contacts),
+  deals: many(deals),
 }));
 
 export const accountRelations = relations(account, ({ one }) => ({
@@ -113,9 +164,29 @@ export const sessionRelations = relations(session, ({ one }) => ({
   user: one(user, { fields: [session.userId], references: [user.id] }),
 }));
 
-export const contactRelations = relations(contacts, ({ one }) => ({
+export const contactRelations = relations(contacts, ({ one, many }) => ({
   createdBy: one(user, {
     fields: [contacts.createdById],
     references: [user.id],
+  }),
+  dealContacts: many(dealContacts),
+}));
+
+export const dealRelations = relations(deals, ({ one, many }) => ({
+  createdBy: one(user, {
+    fields: [deals.createdById],
+    references: [user.id],
+  }),
+  dealContacts: many(dealContacts),
+}));
+
+export const dealContactRelations = relations(dealContacts, ({ one }) => ({
+  deal: one(deals, {
+    fields: [dealContacts.dealId],
+    references: [deals.id],
+  }),
+  contact: one(contacts, {
+    fields: [dealContacts.contactId],
+    references: [contacts.id],
   }),
 }));
