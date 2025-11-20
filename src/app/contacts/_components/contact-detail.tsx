@@ -17,6 +17,16 @@ import {
 } from "@/components/ui/dialog";
 import { ContactForm } from "./contact-form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ContactDetailProps {
     contactId: string;
@@ -34,6 +44,7 @@ const STAGE_COLORS: Record<string, string> = {
 export function ContactDetail({ contactId }: ContactDetailProps) {
     const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const utils = api.useUtils();
 
     const { data: contact, isLoading, error } = api.contact.getById.useQuery({
@@ -58,13 +69,12 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
     });
 
     const handleDelete = () => {
-        if (
-            confirm(
-                `Are you sure you want to delete ${contact?.firstName ?? ""} ${contact?.lastName ?? ""}? This action cannot be undone.`,
-            )
-        ) {
-            deleteContact.mutate({ id: contactId });
-        }
+        setShowDeleteDialog(true);
+    };
+
+    const confirmDelete = () => {
+        deleteContact.mutate({ id: contactId });
+        setShowDeleteDialog(false);
     };
 
     if (isLoading) {
@@ -347,6 +357,27 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
                     />
                 </DialogContent>
             </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete {contact?.firstName ?? ""} {contact?.lastName ?? ""}? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

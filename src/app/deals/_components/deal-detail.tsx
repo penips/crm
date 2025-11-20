@@ -12,6 +12,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EditDialog } from "@/components/edit-dialog";
 import { DealForm } from "./deal-form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface DealDetailProps {
     dealId: string;
@@ -29,6 +39,7 @@ const STAGE_COLORS: Record<string, string> = {
 export function DealDetail({ dealId }: DealDetailProps) {
     const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const utils = api.useUtils();
 
     const { data: deal, isLoading, error } = api.deal.getById.useQuery({
@@ -49,13 +60,12 @@ export function DealDetail({ dealId }: DealDetailProps) {
     });
 
     const handleDelete = () => {
-        if (
-            confirm(
-                `Are you sure you want to delete "${deal?.name ?? ""}"? This action cannot be undone.`,
-            )
-        ) {
-            deleteDeal.mutate({ id: dealId });
-        }
+        setShowDeleteDialog(true);
+    };
+
+    const confirmDelete = () => {
+        deleteDeal.mutate({ id: dealId });
+        setShowDeleteDialog(false);
     };
 
     const formatCurrency = (value: string | null, currency: string | null) => {
@@ -307,6 +317,27 @@ export function DealDetail({ dealId }: DealDetailProps) {
                     submitLabel="Save Changes"
                 />
             </EditDialog>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete "{deal?.name ?? ""}"? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

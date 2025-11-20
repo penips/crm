@@ -25,6 +25,16 @@ import { useColumnConfig } from "@/hooks/use-column-config";
 import { ColumnSettingsDialog } from "@/components/column-settings-dialog";
 import { Settings2, ArrowUp, ArrowDown } from "lucide-react";
 import { ColumnFilter, type ColumnFilter as ColumnFilterType } from "@/components/column-filter";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ContactListProps {
     onContactClick?: (contactId: string) => void;
@@ -42,6 +52,7 @@ export function ContactList({
     const [columnFilters, setColumnFilters] = useState<ColumnFilterType[]>([]);
     const [editingContact, setEditingContact] = useState<string | null>(null);
     const [columnSettingsOpen, setColumnSettingsOpen] = useState(false);
+    const [deleteContactId, setDeleteContactId] = useState<string | null>(null);
     const utils = api.useUtils();
     const router = useRouter();
 
@@ -490,14 +501,9 @@ export function ContactList({
                                                             <Button
                                                                 variant="link"
                                                                 className="h-auto p-0 text-destructive hover:text-destructive"
-                                                                onClick={() => {
-                                                                    if (
-                                                                        confirm(
-                                                                            "Are you sure you want to delete this contact?",
-                                                                        )
-                                                                    ) {
-                                                                        deleteContact.mutate({ id: contact.id });
-                                                                    }
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setDeleteContactId(contact.id);
                                                                 }}
                                                             >
                                                                 Delete
@@ -565,6 +571,32 @@ export function ContactList({
                     });
                 }}
             />
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={!!deleteContactId} onOpenChange={(open) => !open && setDeleteContactId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this contact? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (deleteContactId) {
+                                    deleteContact.mutate({ id: deleteContactId });
+                                    setDeleteContactId(null);
+                                }
+                            }}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

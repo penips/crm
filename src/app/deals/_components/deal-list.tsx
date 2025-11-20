@@ -25,6 +25,16 @@ import { useColumnConfig } from "@/hooks/use-column-config";
 import { ColumnSettingsDialog } from "@/components/column-settings-dialog";
 import { Settings2, ArrowUp, ArrowDown } from "lucide-react";
 import { ColumnFilter, type ColumnFilter as ColumnFilterType } from "@/components/column-filter";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface DealListProps {
     onDealClick?: (dealId: string) => void;
@@ -51,6 +61,7 @@ export function DealList({
     const [columnFilters, setColumnFilters] = useState<ColumnFilterType[]>([]);
     const [editingDeal, setEditingDeal] = useState<string | null>(null);
     const [columnSettingsOpen, setColumnSettingsOpen] = useState(false);
+    const [deleteDealId, setDeleteDealId] = useState<string | null>(null);
     const utils = api.useUtils();
     const router = useRouter();
 
@@ -630,14 +641,9 @@ export function DealList({
                                                             <Button
                                                                 variant="link"
                                                                 className="h-auto p-0 text-destructive hover:text-destructive"
-                                                                onClick={() => {
-                                                                    if (
-                                                                        confirm(
-                                                                            "Are you sure you want to delete this deal?",
-                                                                        )
-                                                                    ) {
-                                                                        deleteDeal.mutate({ id: deal.id });
-                                                                    }
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setDeleteDealId(deal.id);
                                                                 }}
                                                             >
                                                                 Delete
@@ -705,6 +711,32 @@ export function DealList({
                     });
                 }}
             />
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={!!deleteDealId} onOpenChange={(open) => !open && setDeleteDealId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this deal? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (deleteDealId) {
+                                    deleteDeal.mutate({ id: deleteDealId });
+                                    setDeleteDealId(null);
+                                }
+                            }}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
