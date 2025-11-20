@@ -9,19 +9,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EditDialog } from "@/components/edit-dialog";
 import { DealForm } from "./deal-form";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface DealDetailProps {
     dealId: string;
 }
 
 const STAGE_COLORS: Record<string, string> = {
-  lead: "bg-blue-100 text-blue-800",
-  qualified: "bg-purple-100 text-purple-800",
-  proposal: "bg-yellow-100 text-yellow-800",
-  negotiation: "bg-orange-100 text-orange-800",
-  "closed-won": "bg-green-100 text-green-800",
-  "closed-lost": "bg-red-100 text-red-800",
+    lead: "bg-blue-100 text-blue-800",
+    qualified: "bg-purple-100 text-purple-800",
+    proposal: "bg-yellow-100 text-yellow-800",
+    negotiation: "bg-orange-100 text-orange-800",
+    "closed-won": "bg-green-100 text-green-800",
+    "closed-lost": "bg-red-100 text-red-800",
 };
 
 export function DealDetail({ dealId }: DealDetailProps) {
@@ -121,164 +123,190 @@ export function DealDetail({ dealId }: DealDetailProps) {
                     <h1 className="text-4xl font-bold">{deal.name}</h1>
                 </div>
                 <div className="flex gap-2">
-                    {!isEditing ? (
-                        <>
-                            <Button onClick={() => setIsEditing(true)}>
-                                Edit
-                            </Button>
-                            <Button
-                                variant="destructive"
-                                onClick={handleDelete}
-                                disabled={deleteDeal.isPending}
-                            >
-                                {deleteDeal.isPending ? "Deleting..." : "Delete"}
-                            </Button>
-                        </>
-                    ) : (
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsEditing(false)}
-                        >
-                            Cancel
-                        </Button>
-                    )}
+                    <Button onClick={() => setIsEditing(true)}>
+                        Edit
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        onClick={handleDelete}
+                        disabled={deleteDeal.isPending}
+                    >
+                        {deleteDeal.isPending ? "Deleting..." : "Delete"}
+                    </Button>
                 </div>
             </div>
 
-            {isEditing ? (
-                /* Edit Form */
+            {/* Deal Information and Contacts - Side by Side */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {/* Deal Information Card */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Edit Deal</CardTitle>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-lg">Deal Information</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <DealForm
-                            initialData={deal}
-                            onSubmit={async (data) => {
-                                await updateDeal.mutateAsync({ id: dealId, ...data });
-                            }}
-                            onCancel={() => setIsEditing(false)}
-                            isLoading={updateDeal.isPending}
-                            mode="edit"
-                            submitLabel="Save Changes"
-                        />
+
+                    <CardContent className="space-y-3">
+                        <dl className="grid grid-cols-1 gap-3">
+                            <div>
+                                <dt className="text-xs font-medium text-muted-foreground mb-0.5">Deal Name</dt>
+                                <dd className="text-sm text-foreground">{deal.name}</dd>
+                            </div>
+
+                            <div>
+                                <dt className="text-xs font-medium text-muted-foreground mb-0.5">Stage</dt>
+                                <dd>
+                                    <Badge
+                                        variant="secondary"
+                                        className={`${STAGE_COLORS[deal.stage] ?? ""} text-xs`}
+                                    >
+                                        {deal.stage.replace("-", " ")}
+                                    </Badge>
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt className="text-xs font-medium text-muted-foreground mb-0.5">Deal Value</dt>
+                                <dd className="text-sm text-foreground">
+                                    {formatCurrency(deal.value, deal.currency)}
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt className="text-xs font-medium text-muted-foreground mb-0.5">Currency</dt>
+                                <dd className="text-sm text-foreground">
+                                    {deal.currency ?? (
+                                        <span className="text-muted-foreground">Not provided</span>
+                                    )}
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt className="text-xs font-medium text-muted-foreground mb-0.5">Close Date</dt>
+                                <dd className="text-sm text-foreground">
+                                    {deal.expectedCloseDate ? (
+                                        new Date(deal.expectedCloseDate).toLocaleDateString()
+                                    ) : (
+                                        <span className="text-muted-foreground">Not provided</span>
+                                    )}
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt className="text-xs font-medium text-muted-foreground mb-0.5">Notes</dt>
+                                <dd className="text-sm text-foreground">
+                                    {deal.notes ? (
+                                        <div className="whitespace-pre-wrap rounded-md bg-muted p-2 text-sm text-foreground max-h-32 overflow-y-auto">
+                                            {deal.notes}
+                                        </div>
+                                    ) : (
+                                        <span className="text-muted-foreground">No notes</span>
+                                    )}
+                                </dd>
+                            </div>
+
+                            {/* Created and Updated Date - Side by side */}
+                            <div className="grid grid-cols-2 gap-3 pt-1 border-t">
+                                <div>
+                                    <dt className="text-xs font-medium text-muted-foreground mb-0.5">Created</dt>
+                                    <dd className="text-xs text-foreground">
+                                        {new Date(deal.createdAt).toLocaleDateString()}
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt className="text-xs font-medium text-muted-foreground mb-0.5">Updated</dt>
+                                    <dd className="text-xs text-foreground">
+                                        {deal.updatedAt
+                                            ? new Date(deal.updatedAt).toLocaleDateString()
+                                            : <span className="text-muted-foreground">—</span>}
+                                    </dd>
+                                </div>
+                            </div>
+                        </dl>
                     </CardContent>
                 </Card>
-            ) : (
-                /* Deal Information Card */
+
+                {/* Associated Contacts Card */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Deal Information</CardTitle>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-lg">Associated Contacts</CardTitle>
                     </CardHeader>
-
-                <CardContent>
-                    <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                        <div>
-                            <dt className="text-sm font-medium text-muted-foreground">Deal Name</dt>
-                            <dd className="mt-1 text-sm text-foreground">{deal.name}</dd>
-                        </div>
-
-                        <div>
-                            <dt className="text-sm font-medium text-muted-foreground">Stage</dt>
-                            <dd className="mt-1">
-                                <Badge
-                                    variant="secondary"
-                                    className={STAGE_COLORS[deal.stage] ?? ""}
-                                >
-                                    {deal.stage}
-                                </Badge>
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt className="text-sm font-medium text-muted-foreground">Deal Value</dt>
-                            <dd className="mt-1 text-sm text-foreground">
-                                {formatCurrency(deal.value, deal.currency)}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt className="text-sm font-medium text-muted-foreground">Currency</dt>
-                            <dd className="mt-1 text-sm text-foreground">
-                                {deal.currency ?? "Not provided"}
-                            </dd>
-                        </div>
-
-                        {/* Contacts */}
-                        <div className="sm:col-span-2">
-                            <dt className="text-sm font-medium text-muted-foreground">Contacts</dt>
-                            <dd className="mt-1 text-sm text-foreground">
-                                {deal.dealContacts && deal.dealContacts.length > 0 ? (
-                                    <div className="flex flex-wrap gap-2">
+                    <CardContent>
+                        {deal.dealContacts && deal.dealContacts.length > 0 ? (
+                            <div className="rounded-lg border">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="h-8 text-xs">Name</TableHead>
+                                            <TableHead className="h-8 text-xs">Email</TableHead>
+                                            <TableHead className="h-8 text-xs">Company</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
                                         {deal.dealContacts.map((dealContact) => {
                                             const contact = dealContact.contact;
                                             return (
-                                                <Link
+                                                <TableRow
                                                     key={contact.id}
-                                                    href={`/contacts/${contact.id}`}
-                                                    className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-primary hover:underline"
+                                                    className="cursor-pointer hover:bg-muted/50 h-10"
+                                                    onClick={() => router.push(`/contacts/${contact.id}`)}
                                                 >
-                                                    {contact.firstName || contact.lastName
-                                                        ? `${contact.firstName ?? ""} ${contact.lastName ?? ""}`.trim()
-                                                        : contact.email ?? "Unnamed Contact"}
-                                                    {contact.company && (
-                                                        <span className="text-muted-foreground">
-                                                            ({contact.company})
-                                                        </span>
-                                                    )}
-                                                </Link>
+                                                    <TableCell className="font-medium text-sm py-2">
+                                                        {contact.firstName || contact.lastName
+                                                            ? `${contact.firstName ?? ""} ${contact.lastName ?? ""}`.trim()
+                                                            : contact.email ?? (
+                                                                <span className="text-muted-foreground italic">Unnamed</span>
+                                                            )}
+                                                    </TableCell>
+                                                    <TableCell className="text-xs py-2">
+                                                        {contact.email ? (
+                                                            <a
+                                                                href={`mailto:${contact.email}`}
+                                                                className="text-primary hover:underline"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                {contact.email}
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-muted-foreground">—</span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-xs py-2">
+                                                        {contact.company ?? (
+                                                            <span className="text-muted-foreground">—</span>
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
                                             );
                                         })}
-                                    </div>
-                                ) : (
-                                    <span className="text-muted-foreground">No contacts assigned</span>
-                                )}
-                            </dd>
-                        </div>
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        ) : (
+                            <div className="py-8 text-center text-sm text-muted-foreground">
+                                <p>No contacts associated with this deal.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
 
-                        <div>
-                            <dt className="text-sm font-medium text-muted-foreground">Expected Close Date</dt>
-                            <dd className="mt-1 text-sm text-foreground">
-                                {deal.expectedCloseDate ? (
-                                    new Date(deal.expectedCloseDate).toLocaleDateString()
-                                ) : (
-                                    <span className="text-muted-foreground">Not provided</span>
-                                )}
-                            </dd>
-                        </div>
-
-                        <div className="sm:col-span-2">
-                            <dt className="text-sm font-medium text-muted-foreground">Notes</dt>
-                            <dd className="mt-1 text-sm text-foreground">
-                                {deal.notes ? (
-                                    <div className="whitespace-pre-wrap rounded-md bg-muted p-3 text-foreground">
-                                        {deal.notes}
-                                    </div>
-                                ) : (
-                                    <span className="text-muted-foreground">No notes</span>
-                                )}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt className="text-sm font-medium text-muted-foreground">Created</dt>
-                            <dd className="mt-1 text-sm text-foreground">
-                                {new Date(deal.createdAt).toLocaleString()}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt className="text-sm font-medium text-muted-foreground">Last Updated</dt>
-                            <dd className="mt-1 text-sm text-foreground">
-                                {deal.updatedAt
-                                    ? new Date(deal.updatedAt).toLocaleString()
-                                    : <span className="text-muted-foreground">Not available</span>}
-                            </dd>
-                        </div>
-                    </dl>
-                </CardContent>
-            </Card>
-            )}
+            {/* Edit Modal */}
+            <EditDialog
+                open={isEditing}
+                onOpenChange={setIsEditing}
+                title="Edit Deal"
+            >
+                <DealForm
+                    initialData={deal}
+                    onSubmit={async (data) => {
+                        await updateDeal.mutateAsync({ id: dealId, ...data });
+                    }}
+                    onCancel={() => setIsEditing(false)}
+                    isLoading={updateDeal.isPending}
+                    mode="edit"
+                    submitLabel="Save Changes"
+                />
+            </EditDialog>
         </div>
     );
 }

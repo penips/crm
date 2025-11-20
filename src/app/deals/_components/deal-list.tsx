@@ -57,7 +57,9 @@ export function DealList({
     }, [search]);
 
     const { data, isLoading } = api.deal.getAll.useQuery({
+        search: debouncedSearch || undefined,
         limit: limit,
+        includeContacts: true,
     });
 
     const deleteDeal = api.deal.delete.useMutation({
@@ -86,20 +88,39 @@ export function DealList({
         }
     };
 
-    const filteredDeals = data?.deals.filter((deal) => {
-        if (!debouncedSearch) return true;
-        const searchLower = debouncedSearch.toLowerCase();
-        return (
-            deal.name.toLowerCase().includes(searchLower) ||
-            deal.stage.toLowerCase().includes(searchLower) ||
-            (deal.dealContacts?.some((dc) =>
-                dc.contact.firstName?.toLowerCase().includes(searchLower) ??
-                dc.contact.lastName?.toLowerCase().includes(searchLower) ??
-                dc.contact.company?.toLowerCase().includes(searchLower) ??
-                dc.contact.email?.toLowerCase().includes(searchLower)
-            ) ?? false)
-        );
-    }) ?? [];
+    type DealWithContacts = {
+        id: string;
+        name: string;
+        notes: string | null;
+        createdAt: Date;
+        updatedAt: Date | null;
+        createdById: string;
+        stage: string;
+        value: string | null;
+        currency: string | null;
+        expectedCloseDate: Date | null;
+        dealContacts: Array<{
+            id: string;
+            dealId: string;
+            contactId: string;
+            createdAt: Date;
+            contact: {
+                id: string;
+                firstName: string | null;
+                lastName: string | null;
+                email: string | null;
+                phone: string | null;
+                company: string | null;
+                jobTitle: string | null;
+                notes: string | null;
+                tags: string[] | null;
+                createdById: string;
+                createdAt: Date;
+                updatedAt: Date | null;
+            };
+        }>;
+    };
+    const filteredDeals = (data?.deals ?? []) as DealWithContacts[];
 
     const formatCurrency = (value: string | null, currency: string | null) => {
         if (!value) return "—";
@@ -148,7 +169,7 @@ export function DealList({
                                 <div className="border-b bg-muted/50 px-6 py-3">
                                     <p className="text-sm text-muted-foreground">
                                         Showing {filteredDeals.length} of {data?.total ?? 0} deal(s)
-                                        {search && ` matching "${search}"`}
+                                        {debouncedSearch && ` matching "${debouncedSearch}"`}
                                     </p>
                                 </div>
 
@@ -166,146 +187,149 @@ export function DealList({
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {filteredDeals.map((deal) => (
-                                            <TableRow
-                                                key={deal.id}
-                                                className="cursor-pointer"
-                                                onClick={() => handleRowClick(deal.id)}
-                                            >
-                                                <TableCell className="font-medium">
-                                                    {deal.name}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge
-                                                        className={STAGE_COLORS[deal.stage] ?? ""}
-                                                    >
-                                                        {deal.stage}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    {formatCurrency(deal.value, deal.currency)}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {deal.dealContacts && deal.dealContacts.length > 0 ? (
-                                                        <div className="flex flex-wrap gap-1 items-center">
-                                                            {deal.dealContacts.slice(0, 2).map((dealContact, idx) => {
-                                                                const contact = dealContact.contact;
-                                                                const contactName = contact.firstName || contact.lastName
-                                                                    ? `${contact.firstName ?? ""} ${contact.lastName ?? ""}`.trim()
-                                                                    : contact.email ?? "Unnamed";
-                                                                return (
-                                                                    <div key={contact.id} className="flex items-center gap-1">
-                                                                        <Badge variant="outline" className="text-xs font-normal">
-                                                                            {contactName}
-                                                                        </Badge>
-                                                                        {idx < Math.min(deal.dealContacts.length, 2) - 1 && (
-                                                                            <span className="text-muted-foreground text-xs">•</span>
-                                                                        )}
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                            {deal.dealContacts.length > 2 && (
-                                                                <>
-                                                                    <span className="text-muted-foreground text-xs">•</span>
-                                                                    <Badge variant="secondary" className="text-xs font-normal">
-                                                                        +{deal.dealContacts.length - 2} more
-                                                                    </Badge>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-muted-foreground">—</span>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {deal.dealContacts && deal.dealContacts.length > 0 ? (
-                                                        <div className="flex flex-wrap gap-1 items-center">
-                                                            {Array.from(
-                                                                new Set(
-                                                                    deal.dealContacts
-                                                                        .map((dc) => dc.contact.company)
-                                                                        .filter((c): c is string => !!c)
-                                                                )
-                                                            )
-                                                                .slice(0, 2)
-                                                                .map((company, idx, companies) => (
-                                                                    <div key={idx} className="flex items-center gap-1">
-                                                                        <Badge variant="outline" className="text-xs font-normal">
-                                                                            {company}
-                                                                        </Badge>
-                                                                        {idx < companies.length - 1 && (
-                                                                            <span className="text-muted-foreground text-xs">•</span>
-                                                                        )}
-                                                                    </div>
-                                                                ))}
-                                                            {Array.from(
-                                                                new Set(
-                                                                    deal.dealContacts
-                                                                        .map((dc) => dc.contact.company)
-                                                                        .filter((c): c is string => !!c)
-                                                                )
-                                                            ).length > 2 && (
+                                        {filteredDeals.map((deal) => {
+                                            const dealWithContacts = deal;
+                                            return (
+                                                <TableRow
+                                                    key={dealWithContacts.id}
+                                                    className="cursor-pointer"
+                                                    onClick={() => handleRowClick(dealWithContacts.id)}
+                                                >
+                                                    <TableCell className="font-medium">
+                                                        {dealWithContacts.name}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge
+                                                            className={STAGE_COLORS[dealWithContacts.stage] ?? ""}
+                                                        >
+                                                            {dealWithContacts.stage}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {formatCurrency(dealWithContacts.value, dealWithContacts.currency)}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {dealWithContacts.dealContacts && dealWithContacts.dealContacts.length > 0 ? (
+                                                            <div className="flex flex-wrap gap-1 items-center">
+                                                                {dealWithContacts.dealContacts.slice(0, 2).map((dealContact, idx) => {
+                                                                    const contact = dealContact.contact;
+                                                                    const contactName = contact.firstName || contact.lastName
+                                                                        ? `${contact.firstName ?? ""} ${contact.lastName ?? ""}`.trim()
+                                                                        : contact.email ?? "Unnamed";
+                                                                    return (
+                                                                        <div key={contact.id} className="flex items-center gap-1">
+                                                                            <Badge variant="outline" className="text-xs font-normal">
+                                                                                {contactName}
+                                                                            </Badge>
+                                                                            {idx < Math.min(dealWithContacts.dealContacts.length, 2) - 1 && (
+                                                                                <span className="text-muted-foreground text-xs">•</span>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                                {dealWithContacts.dealContacts.length > 2 && (
                                                                     <>
                                                                         <span className="text-muted-foreground text-xs">•</span>
                                                                         <Badge variant="secondary" className="text-xs font-normal">
-                                                                            +{Array.from(
-                                                                                new Set(
-                                                                                    deal.dealContacts
-                                                                                        .map((dc) => dc.contact.company)
-                                                                                        .filter((c): c is string => !!c)
-                                                                                )
-                                                                            ).length - 2} more
+                                                                            +{dealWithContacts.dealContacts.length - 2} more
                                                                         </Badge>
                                                                     </>
                                                                 )}
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-muted-foreground">—</span>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {deal.expectedCloseDate ? (
-                                                        new Date(deal.expectedCloseDate).toLocaleDateString()
-                                                    ) : (
-                                                        <span className="text-muted-foreground">—</span>
-                                                    )}
-                                                </TableCell>
-                                                {showActions && (
-                                                    <TableCell
-                                                        className="text-right"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    >
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            <Button
-                                                                variant="link"
-                                                                className="h-auto p-0"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setEditingDeal(deal.id);
-                                                                }}
-                                                            >
-                                                                Edit
-                                                            </Button>
-                                                            <Button
-                                                                variant="link"
-                                                                className="h-auto p-0 text-destructive hover:text-destructive"
-                                                                onClick={() => {
-                                                                    if (
-                                                                        confirm(
-                                                                            "Are you sure you want to delete this deal?",
-                                                                        )
-                                                                    ) {
-                                                                        deleteDeal.mutate({ id: deal.id });
-                                                                    }
-                                                                }}
-                                                            >
-                                                                Delete
-                                                            </Button>
-                                                        </div>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-muted-foreground">—</span>
+                                                        )}
                                                     </TableCell>
-                                                )}
-                                            </TableRow>
-                                        ))}
+                                                    <TableCell>
+                                                        {dealWithContacts.dealContacts && dealWithContacts.dealContacts.length > 0 ? (
+                                                            <div className="flex flex-wrap gap-1 items-center">
+                                                                {Array.from(
+                                                                    new Set(
+                                                                        dealWithContacts.dealContacts
+                                                                            .map((dc) => dc.contact.company)
+                                                                            .filter((c): c is string => !!c)
+                                                                    )
+                                                                )
+                                                                    .slice(0, 2)
+                                                                    .map((company, idx, companies) => (
+                                                                        <div key={idx} className="flex items-center gap-1">
+                                                                            <Badge variant="outline" className="text-xs font-normal">
+                                                                                {company}
+                                                                            </Badge>
+                                                                            {idx < companies.length - 1 && (
+                                                                                <span className="text-muted-foreground text-xs">•</span>
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                {Array.from(
+                                                                    new Set(
+                                                                        dealWithContacts.dealContacts
+                                                                            .map((dc) => dc.contact.company)
+                                                                            .filter((c): c is string => !!c)
+                                                                    )
+                                                                ).length > 2 && (
+                                                                        <>
+                                                                            <span className="text-muted-foreground text-xs">•</span>
+                                                                            <Badge variant="secondary" className="text-xs font-normal">
+                                                                                +{Array.from(
+                                                                                    new Set(
+                                                                                        dealWithContacts.dealContacts
+                                                                                            .map((dc) => dc.contact.company)
+                                                                                            .filter((c): c is string => !!c)
+                                                                                    )
+                                                                                ).length - 2} more
+                                                                            </Badge>
+                                                                        </>
+                                                                    )}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-muted-foreground">—</span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {dealWithContacts.expectedCloseDate ? (
+                                                            new Date(dealWithContacts.expectedCloseDate).toLocaleDateString()
+                                                        ) : (
+                                                            <span className="text-muted-foreground">—</span>
+                                                        )}
+                                                    </TableCell>
+                                                    {showActions && (
+                                                        <TableCell
+                                                            className="text-right"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                <Button
+                                                                    variant="link"
+                                                                    className="h-auto p-0"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setEditingDeal(dealWithContacts.id);
+                                                                    }}
+                                                                >
+                                                                    Edit
+                                                                </Button>
+                                                                <Button
+                                                                    variant="link"
+                                                                    className="h-auto p-0 text-destructive hover:text-destructive"
+                                                                    onClick={() => {
+                                                                        if (
+                                                                            confirm(
+                                                                                "Are you sure you want to delete this deal?",
+                                                                            )
+                                                                        ) {
+                                                                            deleteDeal.mutate({ id: dealWithContacts.id });
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    Delete
+                                                                </Button>
+                                                            </div>
+                                                        </TableCell>
+                                                    )}
+                                                </TableRow>
+                                            );
+                                        })}
                                     </TableBody>
                                 </Table>
                             </>
