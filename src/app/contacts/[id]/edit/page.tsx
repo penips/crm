@@ -90,7 +90,7 @@ export default function EditContactPage() {
             {/* Header */}
             <div className="mb-6">
                 <Button variant="ghost" asChild className="mb-2">
-                    <Link href={`/contacts/${contactId}`}>← Back to Contact</Link>
+                    <Link href={`/contacts/${contactId}`}>← Back to Contacts</Link>
                 </Button>
                 <h1 className="text-4xl font-bold">Edit Contact</h1>
                 <p className="mt-2 text-muted-foreground">

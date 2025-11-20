@@ -5,7 +5,12 @@ import { api } from "~/trpc/react";
 import { ContactList } from "./_components/contact-list";
 import { ContactForm } from "./_components/contact-form";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function ContactsPage() {
     const [showForm, setShowForm] = useState(false);
@@ -28,31 +33,27 @@ export default function ContactsPage() {
         <div className="container mx-auto p-8">
             <div className="mb-8 flex items-center justify-between">
                 <h1 className="text-4xl font-bold">Contacts</h1>
-                <Button
-                    onClick={() => setShowForm(!showForm)}
-                    variant={showForm ? "outline" : "default"}
-                >
-                    {showForm ? "Cancel" : "+ Add Contact"}
+                <Button onClick={() => setShowForm(true)}>
+                    + Add Contact
                 </Button>
             </div>
 
-            {showForm && (
-                <Card className="mb-8">
-                    <CardHeader>
-                        <CardTitle>Create New Contact</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ContactForm
-                            onSubmit={handleCreate}
-                            onCancel={() => setShowForm(false)}
-                            isLoading={createContact.isPending}
-                            mode="create"
-                        />
-                    </CardContent>
-                </Card>
-            )}
-
             <ContactList />
+
+            {/* Create Modal */}
+            <Dialog open={showForm} onOpenChange={setShowForm}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Create New Contact</DialogTitle>
+                    </DialogHeader>
+                    <ContactForm
+                        onSubmit={handleCreate}
+                        onCancel={() => setShowForm(false)}
+                        isLoading={createContact.isPending}
+                        mode="create"
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

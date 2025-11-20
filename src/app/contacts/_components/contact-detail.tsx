@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "~/trpc/react";
@@ -8,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ContactForm } from "./contact-form";
 
 interface ContactDetailProps {
     contactId: string;
@@ -15,6 +17,8 @@ interface ContactDetailProps {
 
 export function ContactDetail({ contactId }: ContactDetailProps) {
     const router = useRouter();
+    const [isEditing, setIsEditing] = useState(false);
+    const utils = api.useUtils();
 
     const { data: contact, isLoading, error } = api.contact.getById.useQuery({
         id: contactId,
@@ -23,6 +27,13 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
     const deleteContact = api.contact.delete.useMutation({
         onSuccess: () => {
             router.push("/dashboard");
+        },
+    });
+
+    const updateContact = api.contact.update.useMutation({
+        onSuccess: async () => {
+            setIsEditing(false);
+            await utils.contact.getById.invalidate({ id: contactId });
         },
     });
 
@@ -95,21 +106,52 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
                     </h1>
                 </div>
                 <div className="flex gap-2">
-                    <Button asChild>
-                        <Link href={`/contacts/${contact.id}/edit`}>Edit</Link>
-                    </Button>
-                    <Button
-                        variant="destructive"
-                        onClick={handleDelete}
-                        disabled={deleteContact.isPending}
-                    >
-                        {deleteContact.isPending ? "Deleting..." : "Delete"}
-                    </Button>
+                    {!isEditing ? (
+                        <>
+                            <Button onClick={() => setIsEditing(true)}>
+                                Edit
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={handleDelete}
+                                disabled={deleteContact.isPending}
+                            >
+                                {deleteContact.isPending ? "Deleting..." : "Delete"}
+                            </Button>
+                        </>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsEditing(false)}
+                        >
+                            Cancel
+                        </Button>
+                    )}
                 </div>
             </div>
 
-            {/* Contact Information Card */}
-            <Card>
+            {isEditing ? (
+                /* Edit Form */
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Edit Contact</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ContactForm
+                            initialData={contact}
+                            onSubmit={async (data) => {
+                                await updateContact.mutateAsync({ id: contactId, ...data });
+                            }}
+                            onCancel={() => setIsEditing(false)}
+                            isLoading={updateContact.isPending}
+                            mode="edit"
+                            submitLabel="Save Changes"
+                        />
+                    </CardContent>
+                </Card>
+            ) : (
+                /* Contact Information Card */
+                <Card>
                 <CardHeader>
                     <CardTitle>Contact Information</CardTitle>
                 </CardHeader>
@@ -234,6 +276,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
                     </dl>
                 </CardContent>
             </Card>
+            )}
         </div>
     );
 }

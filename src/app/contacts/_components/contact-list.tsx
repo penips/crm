@@ -15,6 +15,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ContactForm } from "./contact-form";
 
 interface ContactListProps {
   onContactClick?: (contactId: string) => void;
@@ -29,6 +36,7 @@ export function ContactList({
 }: ContactListProps) {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [editingContact, setEditingContact] = useState<string | null>(null);
   const utils = api.useUtils();
   const router = useRouter();
 
@@ -50,6 +58,18 @@ export function ContactList({
       void utils.contact.getAll.invalidate();
     },
   });
+
+  const updateContact = api.contact.update.useMutation({
+    onSuccess: () => {
+      setEditingContact(null);
+      void utils.contact.getAll.invalidate();
+    },
+  });
+
+  const { data: contactToEdit } = api.contact.getById.useQuery(
+    { id: editingContact ?? "" },
+    { enabled: !!editingContact }
+  );
 
   const handleRowClick = (contactId: string) => {
     if (onContactClick) {
@@ -170,13 +190,13 @@ export function ContactList({
                             <div className="flex items-center justify-end gap-2">
                               <Button
                                 variant="link"
-                                asChild
                                 className="h-auto p-0"
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingContact(contact.id);
+                                }}
                               >
-                                <Link href={`/contacts/${contact.id}/edit`}>
-                                  Edit
-                                </Link>
+                                Edit
                               </Button>
                               <Button
                                 variant="link"
@@ -205,6 +225,29 @@ export function ContactList({
           </div>
         </div>
       )}
+
+      {/* Edit Modal */}
+      <Dialog open={!!editingContact} onOpenChange={(open) => !open && setEditingContact(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Contact</DialogTitle>
+          </DialogHeader>
+          {contactToEdit && (
+            <ContactForm
+              initialData={contactToEdit}
+              onSubmit={async (data) => {
+                if (editingContact) {
+                  await updateContact.mutateAsync({ id: editingContact, ...data });
+                }
+              }}
+              onCancel={() => setEditingContact(null)}
+              isLoading={updateContact.isPending}
+              mode="edit"
+              submitLabel="Save Changes"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
