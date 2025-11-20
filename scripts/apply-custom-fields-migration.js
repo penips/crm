@@ -19,7 +19,7 @@ if (!databaseUrl) {
 }
 
 async function runMigration() {
-  const sqlClient = postgres(databaseUrl);
+  const sqlClient = postgres(/** @type {string} */ (databaseUrl));
 
   try {
     console.log("Reading migration file...");
