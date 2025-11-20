@@ -253,11 +253,27 @@ export function KanbanBoard() {
         if (!over) return;
 
         const dealId = active.id as string;
-        const newStage = over.id as string;
+        const overId = over.id as string;
 
-        // Find the deal to check its current stage
+        // Find the deal being dragged
         const deal = deals.find((d) => d.id === dealId);
-        if (!deal || deal.stage === newStage) return;
+        if (!deal) return;
+
+        // Determine the target stage:
+        // - If over.id is a stage ID, use it directly
+        // - If over.id is a card ID, find which stage that card belongs to
+        let newStage: string;
+        if (DEAL_STAGES.includes(overId as (typeof DEAL_STAGES)[number])) {
+            newStage = overId;
+        } else {
+            // over.id is a card ID, find which stage it belongs to
+            const targetDeal = deals.find((d) => d.id === overId);
+            if (!targetDeal) return; // Couldn't find the target deal
+            newStage = targetDeal.stage;
+        }
+
+        // Don't update if the stage hasn't changed
+        if (deal.stage === newStage) return;
 
         // Optimistically update immediately (mutation will handle rollback on error)
         updateStage.mutate({
