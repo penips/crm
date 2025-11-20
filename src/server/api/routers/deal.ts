@@ -727,4 +727,109 @@ export const dealRouter = createTRPCRouter({
       wonValue,
     };
   }),
+
+  simulateOnboarding: protectedProcedure.mutation(async ({ ctx }) => {
+    // Generate random contact data
+    const firstNames = [
+      "Alex",
+      "Jordan",
+      "Taylor",
+      "Morgan",
+      "Casey",
+      "Riley",
+      "Avery",
+      "Quinn",
+      "Sage",
+      "River",
+    ];
+    const lastNames = [
+      "Smith",
+      "Johnson",
+      "Williams",
+      "Brown",
+      "Jones",
+      "Garcia",
+      "Miller",
+      "Davis",
+      "Rodriguez",
+      "Martinez",
+    ];
+    const companies = [
+      "TechCorp",
+      "InnovateLabs",
+      "Digital Solutions",
+      "Cloud Systems",
+      "Future Tech",
+      "Smart Industries",
+      "NextGen Inc",
+      "Prime Solutions",
+    ];
+
+    const getRandomInt = (min: number, max: number) => {
+      return Math.floor(Math.random() * (max - min)) + min;
+    };
+
+    const firstName = firstNames[getRandomInt(0, firstNames.length)] ?? "Alex";
+    const lastName = lastNames[getRandomInt(0, lastNames.length)] ?? "Smith";
+    const company = companies[getRandomInt(0, companies.length)] ?? "TechCorp";
+    const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${getRandomInt(100, 999)}@example.com`;
+    const phone = `+1${getRandomInt(200, 999)}${getRandomInt(200, 999)}${getRandomInt(1000, 9999)}`;
+
+    // Create contact
+    const contactId = randomUUID();
+    const [contact] = await ctx.db
+      .insert(contacts)
+      .values({
+        id: contactId,
+        firstName,
+        lastName,
+        email,
+        phone,
+        company,
+        jobTitle: "Business Owner",
+        notes: "Simulated customer onboarding - development purposes",
+        createdById: ctx.session.user.id,
+      })
+      .returning();
+
+    // Create deal
+    const dealId = randomUUID();
+    const [deal] = await ctx.db
+      .insert(deals)
+      .values({
+        id: dealId,
+        name: "New Lead - New Signup",
+        stage: "lead",
+        value: null,
+        currency: "NZD",
+        expectedCloseDate: null,
+        notes: "Automatically created from customer onboarding simulation",
+        createdById: ctx.session.user.id,
+      })
+      .returning();
+
+    // Link contact to deal
+    await ctx.db.insert(dealContacts).values({
+      id: randomUUID(),
+      dealId,
+      contactId,
+    });
+
+    // Fetch the deal with contacts
+    const dealWithContacts = await ctx.db.query.deals.findFirst({
+      where: (deals, { eq }) => eq(deals.id, dealId),
+      with: {
+        dealContacts: {
+          with: {
+            contact: true,
+          },
+        },
+      },
+    });
+
+    return {
+      contact,
+      deal: dealWithContacts ?? deal,
+    };
+  }),
 });

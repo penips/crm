@@ -1,10 +1,32 @@
 "use client";
 
 import { api } from "~/trpc/react";
-import { Users, Building2, TrendingUp } from "lucide-react";
+import { Users, Building2, TrendingUp, UserPlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export function DashboardStats() {
     const { data: stats, isLoading } = api.contact.getStats.useQuery();
+    const utils = api.useUtils();
+    const [isSimulating, setIsSimulating] = useState(false);
+
+    const simulateOnboarding = api.deal.simulateOnboarding.useMutation({
+        onSuccess: () => {
+            void utils.contact.getAll.invalidate();
+            void utils.contact.getStats.invalidate();
+            void utils.deal.getAll.invalidate();
+            void utils.deal.getAllForPipeline.invalidate();
+            setIsSimulating(false);
+        },
+        onError: () => {
+            setIsSimulating(false);
+        },
+    });
+
+    const handleSimulate = () => {
+        setIsSimulating(true);
+        simulateOnboarding.mutate();
+    };
 
     if (isLoading) {
         return (
@@ -22,7 +44,20 @@ export function DashboardStats() {
     return (
         <main className="flex min-h-[calc(100vh-4rem)] flex-col">
             <div className="container mx-auto p-8">
-                <h1 className="mb-8 text-4xl font-bold">Dashboard</h1>
+                <div className="mb-8 flex items-center justify-between">
+                    <h1 className="text-4xl font-bold">Dashboard</h1>
+                    <Button
+                        onClick={handleSimulate}
+                        disabled={isSimulating}
+                        variant="outline"
+                        className="gap-2"
+                    >
+                        <UserPlus className="h-4 w-4" />
+                        {isSimulating
+                            ? "Simulating..."
+                            : "Simulate Customer Onboarding"}
+                    </Button>
+                </div>
                 
                 <div className="grid gap-6 md:grid-cols-3">
                     {/* Total Contacts Card */}
